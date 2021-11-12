@@ -27,6 +27,8 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "description": "revised",
+    "githubUrl": "https://github.com/skyla2692/ToDoApp"
   }
 }

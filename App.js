@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import React, {useState, useEffect} from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, Alert } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, Alert, Platform } from 'react-native';
 import { theme } from './colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Feather } from '@expo/vector-icons'; 
@@ -12,11 +12,9 @@ export default function App() {
   const [working, setWorking] = useState(true);   // if we are in Work page -> true
   const [text, setText] = useState("");    // will be saving what user wrote in TextInput
   const [toDos, setToDos] = useState({});   // will be saving what user want to save as ToDo
-  const [complete, setComplete] = useState(false);
-
+  
   useEffect(() => {
     loadToDos();
-    console.log(toDos);
   }, []);
 
   const travel = () => setWorking(false);
@@ -46,7 +44,7 @@ export default function App() {
     }
     const newToDos = {    // -> using ES6 sugar
       ...toDos, 
-      [Date.now()] : { text, working, complete },
+      [Date.now()] : { text, working },
     }; 
     // const newToDos = Object.assign({}, toDos, { [Date.now()]: { text, work: working }, }); -> using Object.assign()
 
@@ -55,48 +53,33 @@ export default function App() {
     setText("");
   };
 
-  const completeToDo = (key) => {
-    const newToDos = { ...toDos};
-    Alert.alert(
-      "Confirm", 
-      "Are you done?", [
-      { text: "Not yet..",
-        onPress: () => {
-          setComplete(false);
-        } },
-      {
-        text: "YES!!!",
-        onPress: () => {
-          setComplete(true);
-        },
-      },
-    ]);
-    setToDos(newToDos);
-    saveToDos(newToDos);
-    return;
-  };
-
-  const editToDo = (key) => {
-    return;
-  };
-
   const deleteToDo = (key) => {
-    Alert.alert(
-      "Delete To Do?", 
-      "Are you sure?", [
-      { text: "Cancel" },
-      {
-        text: "I'm Sure",
-        style: "destructive",
-        onPress: () => {
-          const newToDos = { ...toDos };
-          delete newToDos[key];
-          setToDos(newToDos);
-          saveToDos(newToDos);
+    if(Platform.OS === "web"){
+      const ok = confirm("Do you want to delete this TO DO?");
+      if(ok){
+        const newToDos = { ...toDos };
+        delete newToDos[key];
+        setToDos(newToDos);
+        saveToDos(newToDos);
+      }
+    } 
+    else{
+      Alert.alert(
+        "Delete To Do?", 
+        "Are you sure?", [
+        { text: "Cancel" },
+        {
+          text: "I'm Sure",
+          style: "destructive",
+          onPress: () => {
+            const newToDos = { ...toDos };
+            delete newToDos[key];
+            setToDos(newToDos);
+            saveToDos(newToDos);
+          },
         },
-      },
-    ]);
-    return;
+      ]);
+    }
   };
 
   return (
@@ -104,10 +87,10 @@ export default function App() {
       <StatusBar style="auto" />
         <View style={styles.header}>
           <TouchableOpacity onPress={work}>
-            <Text style={{...styles.btnText, color: working ? "white" : theme.listIcon}}>Work</Text>
+            <Text style={{ fontSize: 44, fontWeight: "600", color: working ? "white" : theme.listIcon}}>Work</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={travel}>
-            <Text style={{...styles.btnText, color: !working ? "white" : theme.listIcon}}>Travel</Text>
+            <Text style={{ fontSize: 44, fontWeight: "600", color: !working ? "white" : theme.listIcon}}>Travel</Text>
           </TouchableOpacity>
         </View>
 
@@ -123,23 +106,11 @@ export default function App() {
           {Object.keys(toDos).map(key => 
             toDos[key].working === working ? (
               <View style={styles.toDo} key={key}>
-                <View style={styles.todoCheck}>
-                  <TouchableOpacity onPress={() => completeToDo(key)}>
-                    {toDos[key].complete === complete ? (
-                      <MaterialCommunityIcons name="check-box-outline" size={20} color={theme.listIcon} />
-                    ) : (
-                      <MaterialCommunityIcons name="checkbox-blank-outline" size={20} color={theme.listIcon} />
-                    )}
-                  </TouchableOpacity>
-                  <Text style={{ ...styles.toDoText, marginHorizontal: 10 }}>{toDos[key].text}</Text>
-                </View>
+                <Text style={{ ...styles.toDoText, color:"#FFFFFF", marginHorizontal: 10 }}>{toDos[key].text}</Text>
                 <View style={styles.icons}>
-                  <TouchableOpacity onPress={() => editToDo(key)}>
-                    <Feather name="edit" size={20} color={theme.listIcon} style={{ marginHorizontal: 5 }} />
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => deleteToDo(key)}>
-                    <Feather name="delete" size={20} color={theme.listIcon}/>
-                  </TouchableOpacity>
+                <TouchableOpacity onPress={() => deleteToDo(key)}>
+                  <Feather name="delete" size={20} color={theme.listIcon}/>
+                </TouchableOpacity>
                 </View>
               </View>
             ) : null
@@ -160,10 +131,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     flexDirection: "row",
     marginTop: 100,
-  },
-  btnText: {
-    fontSize: 44,
-    fontWeight: "600",
   },
 
   input: {
@@ -191,7 +158,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   toDoText: {
-    color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "500",
   },
